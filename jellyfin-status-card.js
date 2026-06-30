@@ -90,12 +90,12 @@ console.log("jellyfin-status-card: loading...");
     ].join("");
   }
 
-  function buildIdleCard(deviceName) {
+  function buildIdleCard() {
     return [
       '<div class="jsc-card">',
         '<div class="jsc-idle-card">',
           '<ha-icon class="jsc-idle-icon" icon="mdi:monitor-off"></ha-icon>',
-          '<span class="jsc-idle-text">', htmlEscape(deviceName || "Unknown"), ' · Idle</span>',
+          '<span class="jsc-idle-text">Idle</span>',
         '</div>',
       '</div>'
     ].join("");
@@ -199,7 +199,7 @@ console.log("jellyfin-status-card: loading...");
         var playState = attrs.play_state || "idle";
 
         if (playState === "idle" && !attrs.resume_title) {
-          this.innerHTML = buildIdleCard(attrs.device_name);
+          this.innerHTML = buildIdleCard();
         } else {
           this.innerHTML = buildMediaCard(attrs, playState, stateObj.last_updated);
           var img = this.querySelector(".jsc-cover-image");
