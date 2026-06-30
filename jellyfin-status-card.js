@@ -135,7 +135,7 @@ console.log("jellyfin-status-card: loading...");
       "display:block;",
     "}",
     ".jsc-card{background:var(--jsc-bg);border-radius:var(--jsc-radius);overflow:hidden}",
-    ".jsc-cover-wrapper{position:relative;width:100%;padding-bottom:56.25%;overflow:hidden;background:var(--jsc-placeholder-bg);max-height:300px}",
+    ".jsc-cover-wrapper{position:relative;width:100%;padding-bottom:56.25%;overflow:hidden;background:var(--jsc-placeholder-bg);max-height:300px;border-radius:6px}",
     ".jsc-cover-image{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block}",
     ".jsc-cover-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--jsc-text-secondary);font-size:48px}",
     ".jsc-info{padding:12px}",
