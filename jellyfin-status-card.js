@@ -170,10 +170,6 @@ console.log("jellyfin-status-card: loading...");
       return 5;
     };
 
-    JellyfinStatusCard.getConfigElement = function () {
-      return document.createElement("div");
-    };
-
     JellyfinStatusCard.getStubConfig = function () {
       return { entity: "sensor.jellyfin_status_chrome" };
     };
