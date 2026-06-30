@@ -63,6 +63,12 @@ async def _register_lovelace_resource(hass: HomeAssistant) -> None:
     """Register the jellyfin-status-card as a Lovelace resource."""
     card_resource_url = f"{CARD_URL_PREFIX}/jellyfin-status-card.js"
 
+    # Verify the file exists
+    card_path = STATIC_DIR / "jellyfin-status-card.js"
+    if not card_path.is_file():
+        _LOGGER.warning("Card file missing: %s. Resource URL: %s", card_path, card_resource_url)
+        return
+
     try:
         from homeassistant.helpers.storage import Store
         store = Store(hass, 1, "lovelace_resources")
@@ -74,5 +80,10 @@ async def _register_lovelace_resource(hass: HomeAssistant) -> None:
             data["items"] = items
             await store.async_save(data)
             _LOGGER.info("Registered Lovelace resource: %s", card_resource_url)
+        else:
+            _LOGGER.debug("Lovelace resource already registered: %s", card_resource_url)
     except Exception as err:
-        _LOGGER.debug("Could not auto-register card resource (%s). Add manually: %s", err, card_resource_url)
+        _LOGGER.warning(
+            "Auto-registration failed. Add this resource manually in Settings → Dashboards → Resources: URL=%s Type=JavaScript Module (%s)",
+            card_resource_url, err
+        )

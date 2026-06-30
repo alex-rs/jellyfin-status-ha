@@ -35,7 +35,11 @@ A Home Assistant custom integration that tracks currently playing media from you
 2. Install **Jellyfin Status**, then restart Home Assistant
 3. Add the integration via **Settings → Devices & Services → Add Integration → Jellyfin Status**
 
-The card registers automatically — just use `type: custom:jellyfin-status-card` in any dashboard.
+The card registers automatically — just use `type: custom:jellyfin-status-card` in any dashboard. If it doesn't appear, add the resource manually:
+
+1. **Settings → Dashboards → ⋮ → Resources → Add Resource**
+2. URL: `/jellyfin-card/jellyfin-status-card.js`
+3. Type: **JavaScript Module**
 
 ### Manual
 
