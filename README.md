@@ -6,6 +6,10 @@ A Home Assistant custom integration that tracks currently playing media from you
   <img src="https://img.shields.io/badge/HA-2024.1%2B-blue" alt="Home Assistant">
   <img src="https://img.shields.io/badge/HACS-✓-41bdf5" alt="HACS">
   <img src="https://img.shields.io/github/license/alex-rs/jellyfin-status-ha" alt="License">
+  <br>
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=alex-rs&repository=jellyfin-status-ha&category=integration">
+    <img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open this repository in HACS">
+  </a>
 </p>
 
 ## Features
