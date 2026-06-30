@@ -26,7 +26,8 @@
       "init": {
         "title": "Configure Jellyfin Status",
         "data": {
-          "poll_interval": "Poll Interval (seconds)"
+          "poll_interval": "Poll Interval (seconds)",
+          "show_recently_added": "Show recently added when idle"
         }
       }
     }

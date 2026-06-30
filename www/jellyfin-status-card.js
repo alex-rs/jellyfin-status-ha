@@ -28,16 +28,34 @@ console.log("jellyfin-status-card: loading...");
 
   function buildMediaCard(attrs, playState, lastUpdated) {
     var isResume = playState === "idle_resume";
-    var title = isResume ? attrs.resume_title : attrs.title;
-    var coverUrl = isResume ? attrs.resume_cover_url : attrs.cover_url;
-    var type = isResume ? attrs.resume_type : attrs.type;
-    var series = attrs.series;
-    var episode = attrs.episode;
+    var isRecent = playState === "idle_recent";
 
-    var subtitle = type || "";
-    if (series) {
+    var title, coverUrl, type, series, episode;
+
+    if (isRecent) {
+      title = attrs.recent_title;
+      coverUrl = attrs.recent_cover_url;
+      type = attrs.recent_type;
+      series = null;
+      episode = null;
+    } else {
+      title = isResume ? attrs.resume_title : attrs.title;
+      coverUrl = isResume ? attrs.resume_cover_url : attrs.cover_url;
+      type = isResume ? attrs.resume_type : attrs.type;
+      series = attrs.series;
+      episode = attrs.episode;
+    }
+
+    var subtitle = "";
+    if (isRecent) {
+      subtitle = "Recently Added";
+      if (type) subtitle += " \u00b7 " + type;
+      if (attrs.recent_year) subtitle += " \u00b7 " + attrs.recent_year;
+    } else if (series) {
       subtitle = series;
-      if (episode != null) subtitle += " · E" + episode;
+      if (episode != null) subtitle += " \u00b7 E" + episode;
+    } else {
+      subtitle = type || "";
     }
 
     var statusText, stateLabel, stateClass;
@@ -46,6 +64,11 @@ console.log("jellyfin-status-card: loading...");
       var pct = Math.round(attrs.resume_progress || 0);
       statusText = pct + "% watched";
       stateLabel = "Continue";
+      stateClass = "idle_resume";
+    } else if (isRecent) {
+      var recentDuration = attrs.recent_duration || 0;
+      statusText = formatTime(recentDuration);
+      stateLabel = "New";
       stateClass = "idle_resume";
     } else {
       var duration = attrs.duration || 0;

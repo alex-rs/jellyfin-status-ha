@@ -12,6 +12,7 @@ from homeassistant.const import CONF_URL, CONF_API_KEY
 
 from .const import (
     CONF_POLL_INTERVAL,
+    CONF_SHOW_RECENTLY_ADDED,
     DEFAULT_POLL_INTERVAL,
     DOMAIN,
     MIN_POLL_INTERVAL,
@@ -111,6 +112,9 @@ class JellyfinStatusOptionsFlowHandler(OptionsFlow):
             CONF_POLL_INTERVAL,
             self.config_entry.data.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL),
         )
+        current_show_recent = self.config_entry.options.get(
+            CONF_SHOW_RECENTLY_ADDED, False
+        )
 
         return self.async_show_form(
             step_id="init",
@@ -119,6 +123,9 @@ class JellyfinStatusOptionsFlowHandler(OptionsFlow):
                     vol.Optional(
                         CONF_POLL_INTERVAL, default=current_interval
                     ): vol.All(vol.Coerce(int), vol.Range(min=MIN_POLL_INTERVAL)),
+                    vol.Optional(
+                        CONF_SHOW_RECENTLY_ADDED, default=current_show_recent
+                    ): bool,
                 }
             ),
         )

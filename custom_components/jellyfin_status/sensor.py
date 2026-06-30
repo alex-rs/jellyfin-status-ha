@@ -28,11 +28,18 @@ from .const import (
     ATTR_RESUME_PROGRESS,
     ATTR_RESUME_TITLE,
     ATTR_RESUME_TYPE,
+    ATTR_RECENT_COVER_URL,
+    ATTR_RECENT_DURATION,
+    ATTR_RECENT_TITLE,
+    ATTR_RECENT_TYPE,
+    ATTR_RECENT_YEAR,
     ATTR_SERIES,
     ATTR_TITLE,
     ATTR_TYPE,
     ATTR_USER_NAME,
+    CONF_SHOW_RECENTLY_ADDED,
     STATE_IDLE,
+    STATE_IDLE_RECENT,
     STATE_IDLE_RESUME,
     STATE_PAUSED,
     STATE_PLAYING,
@@ -197,10 +204,36 @@ class JellyfinStatusSensor(CoordinatorEntity, SensorEntity):
             self._attr_icon = "mdi:play-circle-outline"
             self._attr_entity_picture = cover_url
         else:
-            attrs[ATTR_PLAY_STATE] = STATE_IDLE
-            self._attr_native_value = STATE_IDLE
-            self._attr_icon = "mdi:monitor-off"
-            self._attr_entity_picture = None
+            show_recent = self.coordinator._config_entry.options.get(
+                CONF_SHOW_RECENTLY_ADDED, False
+            )
+            recent_item = self.coordinator.data.get("recently_added")
+
+            if show_recent and recent_item:
+                item_type = recent_item.get("Type", "")
+                title = recent_item.get("Name", "Unknown")
+                cover_url = self.coordinator.build_cover_url(
+                    recent_item.get("Id", ""), recent_item.get("ImageTags", {})
+                )
+                runtime_ticks = recent_item.get("RunTimeTicks", 0) or 0
+                recent_duration = runtime_ticks / TICKS_PER_SECOND
+                year = recent_item.get("ProductionYear")
+
+                attrs[ATTR_RECENT_TITLE] = title
+                attrs[ATTR_RECENT_COVER_URL] = cover_url
+                attrs[ATTR_RECENT_TYPE] = item_type
+                attrs[ATTR_RECENT_YEAR] = year
+                attrs[ATTR_RECENT_DURATION] = round(recent_duration)
+                attrs[ATTR_PLAY_STATE] = STATE_IDLE_RECENT
+
+                self._attr_native_value = STATE_IDLE
+                self._attr_icon = "mdi:new-box"
+                self._attr_entity_picture = cover_url
+            else:
+                attrs[ATTR_PLAY_STATE] = STATE_IDLE
+                self._attr_native_value = STATE_IDLE
+                self._attr_icon = "mdi:monitor-off"
+                self._attr_entity_picture = None
 
         self._attr_extra_state_attributes = attrs
 

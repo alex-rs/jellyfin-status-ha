@@ -51,10 +51,12 @@ class JellyfinStatusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         async with aiohttp.ClientSession() as session:
             sessions = await self._fetch_sessions(session)
             resume_items = await self._fetch_resume_items(session, sessions)
+            recently_added = await self._fetch_recently_added(session)
 
         return {
             "sessions": sessions,
             "resume_items": resume_items,
+            "recently_added": recently_added,
         }
 
     async def _fetch_sessions(
@@ -121,6 +123,29 @@ class JellyfinStatusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         await asyncio.gather(*[fetch_for_user(uid) for uid in user_ids])
         return resume_items
+
+    async def _fetch_recently_added(
+        self, session: aiohttp.ClientSession
+    ) -> dict[str, Any] | None:
+        """Fetch the most recently added item from Jellyfin."""
+        url = (
+            f"{self._base_url}/Items"
+            f"?SortBy=DateCreated&SortOrder=Descending"
+            f"&IncludeItemTypes=Movie,Episode"
+            f"&Recursive=true&Fields=PrimaryImageAspectRatio"
+            f"&ImageTypeLimit=1&Limit=1"
+        )
+        headers = self._build_headers()
+        try:
+            async with session.get(url, headers=headers, timeout=30) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    items = data.get("Items", []) if isinstance(data, dict) else []
+                    if items:
+                        return items[0]
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
+            pass
+        return None
 
     def _build_headers(self) -> dict[str, str]:
         """Build the Authorization header for Jellyfin API."""

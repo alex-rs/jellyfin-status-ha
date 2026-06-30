@@ -6,6 +6,7 @@ from typing import Final
 DOMAIN: Final = "jellyfin_status"
 
 CONF_POLL_INTERVAL: Final = "poll_interval"
+CONF_SHOW_RECENTLY_ADDED: Final = "show_recently_added"
 
 DEFAULT_POLL_INTERVAL: Final = 10
 MIN_POLL_INTERVAL: Final = 5
@@ -32,11 +33,17 @@ ATTR_RESUME_COVER_URL: Final = "resume_cover_url"
 ATTR_RESUME_PROGRESS: Final = "resume_progress"
 ATTR_RESUME_TYPE: Final = "resume_type"
 ATTR_RESUME_DURATION: Final = "resume_duration"
+ATTR_RECENT_TITLE: Final = "recent_title"
+ATTR_RECENT_COVER_URL: Final = "recent_cover_url"
+ATTR_RECENT_TYPE: Final = "recent_type"
+ATTR_RECENT_YEAR: Final = "recent_year"
+ATTR_RECENT_DURATION: Final = "recent_duration"
 
 STATE_PLAYING: Final = "playing"
 STATE_PAUSED: Final = "paused"
 STATE_IDLE: Final = "idle"
 STATE_IDLE_RESUME: Final = "idle_resume"
+STATE_IDLE_RECENT: Final = "idle_recent"
 
 
 def ticks_to_seconds(ticks: int | None) -> float:
