@@ -1,0 +1,34 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Jellyfin",
+        "description": "Enter your Jellyfin server URL and API key. You can create an API key in the Jellyfin dashboard under Dashboard > API Keys.",
+        "data": {
+          "url": "Server URL",
+          "api_key": "API Key",
+          "poll_interval": "Poll Interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to server. Check the URL and ensure Jellyfin is running.",
+      "invalid_auth": "Invalid API key. Check the key in the Jellyfin dashboard.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This Jellyfin server is already configured.",
+      "reconfigure_successful": "Reconfigured successfully."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Jellyfin Status",
+        "data": {
+          "poll_interval": "Poll Interval (seconds)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "domain": "jellyfin_status",
+  "name": "Jellyfin Status",
+  "version": "1.0.0",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/yourusername/jellyfin-status-ha",
+  "integration_type": "service",
+  "iot_class": "local_polling",
+  "requirements": [],
+  "single_config_entry": true
+}
