@@ -31,14 +31,20 @@ A Home Assistant custom integration that tracks currently playing media from you
 
 ### HACS
 
-1. In HACS, add this repository as a **custom repository** (Integration type)
+**Add the repository:**
+
+1. Click the button above or in HACS add this as a **custom repository** (Integration type)
 2. Install **Jellyfin Status** from HACS
 3. Restart Home Assistant
 4. Add the integration via **Settings → Devices & Services → Add Integration → Jellyfin Status**
-5. Add the Lovelace card resource:
-   - Go to **Settings → Dashboards → ⋮ → Resources → Add Resource**
-   - URL: `/hacsfiles/jellyfin-status-ha/jellyfin-status-card.js`
-   - Type: **JavaScript Module**
+
+**Add the card resource:**
+
+1. Go to **Settings → Dashboards → ⋮ → Resources → Add Resource**
+2. URL: `/hacsfiles/jellyfin-status-ha/www/jellyfin-status-card.js`
+3. Type: **JavaScript Module**
+
+> If the URL above doesn't work, try: `/local/jellyfin-status-card.js` (after manually copying `www/jellyfin-status-card.js` from the repo into your HA `config/www/` directory)
 
 ### Manual
 
