@@ -1,3 +1,5 @@
+console.log("jellyfin-status-card: loading...");
+
 (function () {
   "use strict";
 
@@ -20,6 +22,10 @@
     return null;
   }
 
+  function htmlEscape(s) {
+    return String(s || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
   function buildMediaCard(attrs, playState, lastUpdated) {
     var isResume = playState === "idle_resume";
     var title = isResume ? attrs.resume_title : attrs.title;
@@ -31,7 +37,7 @@
     var subtitle = type || "";
     if (series) {
       subtitle = series;
-      if (episode != null) subtitle += " \u00b7 E" + episode;
+      if (episode != null) subtitle += " · E" + episode;
     }
 
     var statusText, stateLabel, stateClass;
@@ -56,149 +62,175 @@
           if (livePosition > duration) livePosition = duration;
         }
         var remaining = Math.max(0, duration - livePosition);
-        statusText = "\u2212" + formatTime(remaining);
+        statusText = "−" + formatTime(remaining);
       } else {
-        statusText = "\u2212" + formatTime(duration - position);
+        statusText = "−" + formatTime(duration - position);
       }
 
       stateLabel = isPlaying ? "Playing" : "Paused";
       stateClass = isPlaying ? "playing" : "paused";
     }
 
-    var coverHtml = coverUrl
-      ? '<img class="jsc-cover-image" src="' + coverUrl.replace(/"/g, "&quot;") + '" alt="" />'
+    var imgHtml = coverUrl
+      ? '<img class="jsc-cover-image" src="' + htmlEscape(coverUrl) + '" alt="" />'
       : '<div class="jsc-cover-placeholder"><ha-icon icon="mdi:movie-open"></ha-icon></div>';
 
-    return (
-      '<div class="jsc-card">' +
-        '<div class="jsc-cover-wrapper">' + coverHtml + "</div>" +
-        '<div class="jsc-info">' +
-          '<div class="jsc-title" title="' + (title || "").replace(/"/g, "&quot;") + '">' + (title || "Unknown") + "</div>" +
-          (subtitle ? '<div class="jsc-subtitle">' + subtitle.replace(/"/g, "&quot;") + "</div>" : "") +
-          '<div class="jsc-status-row">' +
-            '<span class="jsc-state-dot ' + stateClass + '"></span>' +
-            "<span>" + statusText + " &middot; " + stateLabel + "</span>" +
-          "</div>" +
-        "</div>" +
-      "</div>"
-    );
+    return [
+      '<div class="jsc-card">',
+        '<div class="jsc-cover-wrapper">', imgHtml, '</div>',
+        '<div class="jsc-info">',
+          '<div class="jsc-title" title="', htmlEscape(title || ""), '">', htmlEscape(title || "Unknown"), '</div>',
+          subtitle ? '<div class="jsc-subtitle">' + htmlEscape(subtitle) + '</div>' : '',
+          '<div class="jsc-status-row">',
+            '<span class="jsc-state-dot ', stateClass, '"></span>',
+            '<span>', htmlEscape(statusText), ' · ', htmlEscape(stateLabel), '</span>',
+          '</div>',
+        '</div>',
+      '</div>'
+    ].join("");
   }
 
   function buildIdleCard(deviceName) {
-    return (
-      '<div class="jsc-card">' +
-        '<div class="jsc-idle-card">' +
-          '<ha-icon class="jsc-idle-icon" icon="mdi:monitor-off"></ha-icon>' +
-          '<span class="jsc-idle-text">' + (deviceName || "Unknown") + " &middot; Idle</span>" +
-        "</div>" +
-      "</div>"
-    );
+    return [
+      '<div class="jsc-card">',
+        '<div class="jsc-idle-card">',
+          '<ha-icon class="jsc-idle-icon" icon="mdi:monitor-off"></ha-icon>',
+          '<span class="jsc-idle-text">', htmlEscape(deviceName || "Unknown"), ' · Idle</span>',
+        '</div>',
+      '</div>'
+    ].join("");
   }
 
-  var styleEl = document.createElement("style");
-  styleEl.textContent =
-    "jellyfin-status-card {" +
-      "--jsc-accent: var(--accent-color, #03a9f4);" +
-      "--jsc-text: var(--primary-text-color, #212121);" +
-      "--jsc-text-secondary: var(--secondary-text-color, #757575);" +
-      "--jsc-bg: var(--card-background-color, #ffffff);" +
-      "--jsc-placeholder-bg: rgba(128,128,128,0.1);" +
-      "--jsc-radius: var(--ha-card-border-radius, 12px);" +
-      "display:block;" +
-    "}" +
-    ".jsc-card{background:var(--jsc-bg);border-radius:var(--jsc-radius);overflow:hidden}" +
-    ".jsc-cover-wrapper{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:var(--jsc-placeholder-bg)}" +
-    ".jsc-cover-image{width:100%;height:100%;object-fit:cover;display:block}" +
-    ".jsc-cover-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--jsc-text-secondary);font-size:48px}" +
-    ".jsc-info{padding:12px}" +
-    ".jsc-title{font-size:1.05rem;font-weight:600;color:var(--jsc-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}" +
-    ".jsc-subtitle{font-size:0.85rem;color:var(--jsc-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}" +
-    ".jsc-status-row{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.82rem;color:var(--jsc-text-secondary)}" +
-    ".jsc-state-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}" +
-    ".jsc-state-dot.playing{background:#4caf50;animation:jsc-pulse 1.5s ease-in-out infinite}" +
-    ".jsc-state-dot.paused{background:#ff9800}" +
-    ".jsc-state-dot.idle_resume{background:var(--jsc-accent)}" +
-    "@keyframes jsc-pulse{0%,100%{opacity:1}50%{opacity:0.4}}" +
-    ".jsc-idle-card{display:flex;align-items:center;gap:10px;padding:14px}" +
-    ".jsc-idle-icon{font-size:1.4rem;color:var(--jsc-text-secondary)}" +
-    ".jsc-idle-text{font-size:0.95rem;color:var(--jsc-text-secondary)}" +
-    ".jsc-config-error{padding:14px;color:var(--error-color,#c62828);font-size:0.85rem}";
-  document.head.appendChild(styleEl);
+  var css = [
+    "jellyfin-status-card{",
+      "--jsc-accent:var(--accent-color,#03a9f4);",
+      "--jsc-text:var(--primary-text-color,#212121);",
+      "--jsc-text-secondary:var(--secondary-text-color,#757575);",
+      "--jsc-bg:var(--card-background-color,#ffffff);",
+      "--jsc-placeholder-bg:rgba(128,128,128,0.1);",
+      "--jsc-radius:var(--ha-card-border-radius,12px);",
+      "display:block;",
+    "}",
+    ".jsc-card{background:var(--jsc-bg);border-radius:var(--jsc-radius);overflow:hidden}",
+    ".jsc-cover-wrapper{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:var(--jsc-placeholder-bg)}",
+    ".jsc-cover-image{width:100%;height:100%;object-fit:cover;display:block}",
+    ".jsc-cover-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--jsc-text-secondary);font-size:48px}",
+    ".jsc-info{padding:12px}",
+    ".jsc-title{font-size:1.05rem;font-weight:600;color:var(--jsc-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}",
+    ".jsc-subtitle{font-size:0.85rem;color:var(--jsc-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}",
+    ".jsc-status-row{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.82rem;color:var(--jsc-text-secondary)}",
+    ".jsc-state-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}",
+    ".jsc-state-dot.playing{background:#4caf50;animation:jsc-pulse 1.5s ease-in-out infinite}",
+    ".jsc-state-dot.paused{background:#ff9800}",
+    ".jsc-state-dot.idle_resume{background:var(--jsc-accent)}",
+    "@keyframes jsc-pulse{0%,100%{opacity:1}50%{opacity:0.4}}",
+    ".jsc-idle-card{display:flex;align-items:center;gap:10px;padding:14px}",
+    ".jsc-idle-icon{font-size:1.4rem;color:var(--jsc-text-secondary)}",
+    ".jsc-idle-text{font-size:0.95rem;color:var(--jsc-text-secondary)}",
+    ".jsc-config-error{padding:14px;color:var(--error-color,#c62828);font-size:0.85rem}"
+  ].join("");
 
-  class JellyfinStatusCard extends HTMLElement {
-    constructor() {
-      super();
+  try {
+    var styleEl = document.createElement("style");
+    styleEl.textContent = css;
+    if (document.head) {
+      document.head.appendChild(styleEl);
+    } else {
+      document.addEventListener("DOMContentLoaded", function () {
+        document.head.appendChild(styleEl);
+      });
+    }
+  } catch (e) {
+    console.warn("jellyfin-status-card: failed to inject styles", e);
+  }
+
+  var JellyfinStatusCard = (function () {
+    function JellyfinStatusCard() {
       this._hass = null;
       this._config = null;
     }
 
-    set hass(hass) {
-      if (!hass) return;
-      this._hass = hass;
-      this._render();
-    }
+    JellyfinStatusCard.prototype = Object.create(HTMLElement.prototype);
+    JellyfinStatusCard.prototype.constructor = JellyfinStatusCard;
 
-    setConfig(config) {
+    Object.defineProperty(JellyfinStatusCard.prototype, "hass", {
+      set: function (hass) {
+        if (!hass) return;
+        this._hass = hass;
+        this._render();
+      }
+    });
+
+    JellyfinStatusCard.prototype.setConfig = function (config) {
       this._config = { entity: config.entity || config.entity_id || null };
       this._render();
-    }
+    };
 
-    getCardSize() {
+    JellyfinStatusCard.prototype.getCardSize = function () {
       return 5;
-    }
+    };
 
-    static getConfigElement() {
+    JellyfinStatusCard.getConfigElement = function () {
       return document.createElement("div");
-    }
+    };
 
-    static getStubConfig() {
+    JellyfinStatusCard.getStubConfig = function () {
       return { entity: "sensor.jellyfin_status_chrome" };
-    }
+    };
 
-    _render() {
-      if (!this._config) return;
+    JellyfinStatusCard.prototype._render = function () {
+      try {
+        if (!this._config) return;
 
-      if (!this._hass) {
-        this.innerHTML =
-          '<div class="jsc-card"><div class="jsc-idle-card"><span class="jsc-idle-text">Loading...</span></div></div>';
-        return;
-      }
-
-      var entityId = this._config.entity || findJellyfinEntity(this._hass);
-      if (!entityId) {
-        this.innerHTML =
-          '<div class="jsc-card"><div class="jsc-config-error">No Jellyfin Status entity found.</div></div>';
-        return;
-      }
-
-      var stateObj = this._hass.states[entityId];
-      if (!stateObj) {
-        this.innerHTML =
-          '<div class="jsc-card"><div class="jsc-idle-card"><span class="jsc-idle-text">Waiting for entity: ' + entityId + '</span></div></div>';
-        return;
-      }
-
-      var attrs = stateObj.attributes;
-      var playState = attrs.play_state || "idle";
-
-      if (playState === "idle" && !attrs.resume_title) {
-        this.innerHTML = buildIdleCard(attrs.device_name);
-      } else {
-        this.innerHTML = buildMediaCard(attrs, playState, stateObj.last_updated);
-        var img = this.querySelector(".jsc-cover-image");
-        if (img) {
-          img.addEventListener("error", function () {
-            var wrapper = this.parentElement;
-            if (wrapper) {
-              wrapper.innerHTML = '<div class="jsc-cover-placeholder"><ha-icon icon="mdi:movie-open"></ha-icon></div>';
-            }
-          });
+        if (!this._hass) {
+          this.innerHTML = '<div class="jsc-card"><div class="jsc-idle-card"><span class="jsc-idle-text">Loading...</span></div></div>';
+          return;
         }
-      }
-    }
-  }
 
-  customElements.define("jellyfin-status-card", JellyfinStatusCard);
+        var entityId = this._config.entity || findJellyfinEntity(this._hass);
+        if (!entityId) {
+          this.innerHTML = '<div class="jsc-card"><div class="jsc-config-error">No Jellyfin Status entity found.</div></div>';
+          return;
+        }
+
+        var stateObj = this._hass.states[entityId];
+        if (!stateObj) {
+          this.innerHTML = '<div class="jsc-card"><div class="jsc-idle-card"><span class="jsc-idle-text">Waiting for entity: ' + htmlEscape(entityId) + '</span></div></div>';
+          return;
+        }
+
+        var attrs = stateObj.attributes;
+        var playState = attrs.play_state || "idle";
+
+        if (playState === "idle" && !attrs.resume_title) {
+          this.innerHTML = buildIdleCard(attrs.device_name);
+        } else {
+          this.innerHTML = buildMediaCard(attrs, playState, stateObj.last_updated);
+          var img = this.querySelector(".jsc-cover-image");
+          if (img) {
+            img.addEventListener("error", function () {
+              var wrapper = this.parentElement;
+              if (wrapper) {
+                wrapper.innerHTML = '<div class="jsc-cover-placeholder"><ha-icon icon="mdi:movie-open"></ha-icon></div>';
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.error("jellyfin-status-card: render error", e);
+        this.innerHTML = '<div class="jsc-card"><div class="jsc-config-error">Card error: ' + htmlEscape(String(e.message || e)) + '</div></div>';
+      }
+    };
+
+    return JellyfinStatusCard;
+  })();
+
+  try {
+    customElements.define("jellyfin-status-card", JellyfinStatusCard);
+    console.log("jellyfin-status-card: registered");
+  } catch (e) {
+    console.error("jellyfin-status-card: failed to register", e);
+  }
 
   window.customCards = window.customCards || [];
   window.customCards.push({
