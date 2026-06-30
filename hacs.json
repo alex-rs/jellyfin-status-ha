@@ -2,6 +2,5 @@
   "name": "Jellyfin Status",
   "content_in_root": false,
   "render_readme": true,
-  "homeassistant": "2024.1.0",
-  "filename": "jellyfin-status-card.js"
+  "homeassistant": "2024.1.0"
 }
