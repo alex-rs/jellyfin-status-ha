@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import logging
+from pathlib import Path
+
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -9,7 +13,12 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .coordinator import JellyfinStatusCoordinator
 
+_LOGGER = logging.getLogger(__name__)
+
 PLATFORMS: list[Platform] = [Platform.SENSOR]
+
+STATIC_DIR = Path(__file__).parent / "static"
+CARD_URL_PREFIX = "/jellyfin-card"
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -19,6 +28,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
+
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(CARD_URL_PREFIX, str(STATIC_DIR), False)]
+    )
+
+    await _register_lovelace_resource(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -42,3 +57,22 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
     coordinator: JellyfinStatusCoordinator = hass.data[DOMAIN].get(entry.entry_id)
     if coordinator:
         coordinator.update_interval_from_options()
+
+
+async def _register_lovelace_resource(hass: HomeAssistant) -> None:
+    """Register the jellyfin-status-card as a Lovelace resource."""
+    card_resource_url = f"{CARD_URL_PREFIX}/jellyfin-status-card.js"
+
+    try:
+        from homeassistant.helpers.storage import Store
+        store = Store(hass, 1, "lovelace_resources")
+        data = await store.async_load() or {"items": []}
+        items = data.get("items", [])
+
+        if not any(r.get("url") == card_resource_url for r in items):
+            items.append({"url": card_resource_url, "type": "module"})
+            data["items"] = items
+            await store.async_save(data)
+            _LOGGER.info("Registered Lovelace resource: %s", card_resource_url)
+    except Exception as err:
+        _LOGGER.debug("Could not auto-register card resource (%s). Add manually: %s", err, card_resource_url)
