@@ -30,10 +30,9 @@ console.log("jellyfin-status-card: loading");
   } catch(e) {}
 
   var cardBg     = "background:var(--card-background-color,#fff);border-radius:var(--ha-card-border-radius,12px)";
-  var coverBg    = "background:rgba(128,128,128,0.1)";
-  var coverStyle = "width:100%;height:200px;overflow:hidden;" + coverBg + ";border-radius:var(--ha-card-border-radius,12px)";
-  var imgStyle   = "width:100%;height:200px;object-fit:cover;display:block";
-  var placeholderStyle = "width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--secondary-text-color,#757575);font-size:48px";
+  var coverStyle = "width:100%;height:200px;position:relative;overflow:hidden;background:rgba(128,128,128,0.1);border-radius:var(--ha-card-border-radius,12px)";
+  var blurStyle  = "position:absolute;top:-10px;left:-10px;right:-10px;bottom:-10px;background-size:cover;background-position:center;filter:blur(20px);opacity:0.5;transform:scale(1.05)";
+  var imgCenter  = "position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:90%;max-height:90%;object-fit:contain;display:block";
   var text       = "color:var(--primary-text-color,#212121)";
   var textSec    = "color:var(--secondary-text-color,#757575)";
   var infoPad    = "padding:10px 12px 12px 12px";
@@ -98,13 +97,16 @@ console.log("jellyfin-status-card: loading");
         dAnim = playing ? "animation:jsc-pulse 1.5s ease-in-out infinite" : "";
       }
 
+      var coverHtml;
+      if (cover) {
+        coverHtml = '<div style="' + blurStyle + ';background-image:url(' + esc(cover) + ')"></div><img src="' + esc(cover) + '" alt="" style="' + imgCenter + '" />';
+      } else {
+        coverHtml = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--secondary-text-color,#757575);font-size:48px"><ha-icon icon="mdi:movie-open"></ha-icon></div>';
+      }
+
       this.innerHTML = [
         '<div style="', cardBg, '">',
-          '<div style="', coverStyle, '">',
-            cover
-              ? '<img src="' + esc(cover) + '" alt="" style="' + imgStyle + '" onerror="var p=this.parentElement;if(p)p.innerHTML=\'<div style=\'' + placeholderStyle + '\'><ha-icon icon=mdi:movie-open></ha-icon></div>\'" />'
-              : '<div style="' + placeholderStyle + '"><ha-icon icon="mdi:movie-open"></ha-icon></div>',
-          '</div>',
+          '<div style="', coverStyle, '">', coverHtml, '</div>',
           '<div style="', infoPad, '">',
             '<div style="', titleStyle, '" title="', esc(title||""), '">', esc(title||"Unknown"), '</div>',
             sub ? '<div style="' + subStyle + '">' + esc(sub) + '</div>' : '',
@@ -142,6 +144,14 @@ console.log("jellyfin-status-card: loading");
       this._playState = this._attrs.play_state || "idle";
       this._lastUpdated = so.last_updated || "";
       renderCard.call(this);
+      var img = this.querySelector("img");
+      if (img) {
+        img.addEventListener("error", function () {
+          this.style.display = "none";
+          this.previousElementSibling.style.display = "none";
+          this.parentElement.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--secondary-text-color,#757575);font-size:48px"><ha-icon icon="mdi:movie-open"></ha-icon></div>';
+        });
+      }
     };
 
     customElements.define("jellyfin-status-card", cls);
