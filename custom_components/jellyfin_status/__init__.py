@@ -21,6 +21,7 @@ PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 STATIC_DIR = Path(__file__).parent / "static"
 CARD_URL_PREFIX = "/jellyfin-card"
+DATA_HTTP_REGISTERED = f"{DOMAIN}_http_registered"
 
 
 class JellyfinImageProxyView(HomeAssistantView):
@@ -91,20 +92,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    hass.http.register_view(JellyfinImageProxyView())
+    # Views and static paths survive config entry reloads; register them once.
+    if not hass.data.get(DATA_HTTP_REGISTERED):
+        hass.http.register_view(JellyfinImageProxyView())
 
-    await hass.http.async_register_static_paths(
-        [StaticPathConfig(CARD_URL_PREFIX, str(STATIC_DIR), False)]
-    )
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(CARD_URL_PREFIX, str(STATIC_DIR), False)]
+        )
 
-    await _register_lovelace_resource(hass)
+        await _register_lovelace_resource(hass)
+
+        hass.data[DATA_HTTP_REGISTERED] = True
 
     # After coordinator stores data, update cover URLs to use proxy
     _update_sensor_cover_urls(hass, entry.entry_id)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    entry.async_on_unload(entry.add_update_listener(async_update_options))
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 
@@ -119,11 +124,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle options update."""
-    coordinator: JellyfinStatusCoordinator = hass.data[DOMAIN].get(entry.entry_id)
-    if coordinator:
-        coordinator.update_interval_from_options()
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the entry when its data or options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 def _update_sensor_cover_urls(hass: HomeAssistant, entry_id: str) -> None:
