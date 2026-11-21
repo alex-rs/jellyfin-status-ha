@@ -1,12 +1,15 @@
 {
   "domain": "jellyfin_status",
   "name": "Jellyfin Status",
-  "version": "1.0.0",
-  "codeowners": [],
+  "version": "1.1.0",
+  "codeowners": [
+    "@alex-rs"
+  ],
   "config_flow": true,
-  "documentation": "https://github.com/yourusername/jellyfin-status-ha",
+  "documentation": "https://github.com/alex-rs/jellyfin-status-ha",
   "integration_type": "service",
   "iot_class": "local_polling",
   "requirements": [],
-  "single_config_entry": true
+  "single_config_entry": true,
+  "issue_tracker": "https://github.com/alex-rs/jellyfin-status-ha/issues"
 }

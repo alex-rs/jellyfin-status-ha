@@ -39,13 +39,6 @@ class JellyfinStatusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=update_interval,
         )
 
-    def update_interval_from_options(self) -> None:
-        """Update the poll interval from config entry options."""
-        seconds = self._config_entry.options.get(
-            CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL
-        )
-        self.update_interval = timedelta(seconds=seconds)
-
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch sessions and resume items from Jellyfin."""
         async with aiohttp.ClientSession() as session:

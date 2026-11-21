@@ -8,7 +8,8 @@ from typing import Any
 import aiohttp
 import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
-from homeassistant.const import CONF_URL, CONF_API_KEY
+from homeassistant.const import CONF_API_KEY, CONF_URL
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     CONF_POLL_INTERVAL,
@@ -73,24 +74,85 @@ class JellyfinStatusConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    @staticmethod
-    async def _validate_connection(url: str, api_key: str) -> None:
-        """Validate the connection to the Jellyfin server."""
-        async with aiohttp.ClientSession() as session:
-            headers = {
-                "Authorization": f'MediaBrowser Token="{api_key}"',
-                "Accept": "application/json",
-            }
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Change the server URL (and optionally the API key) of the entry."""
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            url = user_input[CONF_URL].rstrip("/")
+            # An empty API key keeps the stored one.
+            api_key = user_input.get(CONF_API_KEY) or entry.data[CONF_API_KEY]
+
+            # A new unique_id must not collide with another entry.
+            if url != entry.unique_id and any(
+                other.entry_id != entry.entry_id and other.unique_id == url
+                for other in self.hass.config_entries.async_entries(DOMAIN)
+            ):
+                return self.async_abort(reason="already_configured")
+
             try:
-                async with session.get(
-                    f"{url}/Sessions", headers=headers, timeout=15
-                ) as resp:
-                    if resp.status == 401:
-                        raise InvalidAuthError
-                    if resp.status != 200:
-                        raise CannotConnectError
-            except aiohttp.ClientError as err:
-                raise CannotConnectError from err
+                await self._validate_connection(url, api_key)
+            except CannotConnectError:
+                errors["base"] = "cannot_connect"
+            except InvalidAuthError:
+                errors["base"] = "invalid_auth"
+            except Exception:
+                _LOGGER.exception("Unexpected error during reconfigure validation")
+                errors["base"] = "unknown"
+            else:
+                # The update listener reloads the entry. Avoid scheduling a
+                # second reload from the flow.
+                self.hass.config_entries.async_update_entry(
+                    entry,
+                    unique_id=url,
+                    title=url,
+                    data={**entry.data, CONF_URL: url, CONF_API_KEY: api_key},
+                )
+                if not entry.update_listeners:
+                    # The entry is not loaded (for example during setup retry).
+                    self.hass.config_entries.async_schedule_reload(entry.entry_id)
+                return self.async_abort(reason="reconfigure_successful")
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(
+                    {
+                        vol.Required(CONF_URL): str,
+                        vol.Optional(CONF_API_KEY): str,
+                    }
+                ),
+                {
+                    CONF_URL: (
+                        user_input[CONF_URL]
+                        if user_input is not None
+                        else entry.data[CONF_URL]
+                    )
+                },
+            ),
+            errors=errors,
+        )
+
+    async def _validate_connection(self, url: str, api_key: str) -> None:
+        """Validate the connection to the Jellyfin server."""
+        session = async_get_clientsession(self.hass)
+        headers = {
+            "Authorization": f'MediaBrowser Token="{api_key}"',
+            "Accept": "application/json",
+        }
+        try:
+            async with session.get(
+                f"{url}/Sessions", headers=headers, timeout=15
+            ) as resp:
+                if resp.status == 401:
+                    raise InvalidAuthError
+                if resp.status != 200:
+                    raise CannotConnectError
+        except (aiohttp.ClientError, TimeoutError) as err:
+            raise CannotConnectError from err
 
     @staticmethod
     def async_get_options_flow(config_entry) -> OptionsFlow:
