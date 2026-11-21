@@ -60,6 +60,8 @@ Restart Home Assistant, then add the integration. Card auto-registers, no extra 
 
 After setup, you can change the poll interval anytime via the **Configure** button on the integration.
 
+If the server URL or API key changes, use **⋮ → Reconfigure** on the integration (leave the API key empty to keep the current one). Your options are kept.
+
 ## Sensors
 
 One sensor is created per device that has an active session on your Jellyfin server.

@@ -73,6 +73,48 @@ class JellyfinStatusConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Change the server URL (and optionally the API key) of the entry."""
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            url = user_input[CONF_URL].rstrip("/")
+            # An empty API key keeps the stored one.
+            api_key = user_input.get(CONF_API_KEY) or entry.data[CONF_API_KEY]
+            try:
+                await self._validate_connection(url, api_key)
+            except CannotConnectError:
+                errors["base"] = "cannot_connect"
+            except InvalidAuthError:
+                errors["base"] = "invalid_auth"
+            except Exception:
+                _LOGGER.exception("Unexpected error during reconfigure validation")
+                errors["base"] = "unknown"
+            else:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    unique_id=url,
+                    title=url,
+                    data_updates={CONF_URL: url, CONF_API_KEY: api_key},
+                )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(
+                    {
+                        vol.Required(CONF_URL): str,
+                        vol.Optional(CONF_API_KEY): str,
+                    }
+                ),
+                {CONF_URL: entry.data[CONF_URL]},
+            ),
+            errors=errors,
+        )
+
     @staticmethod
     async def _validate_connection(url: str, api_key: str) -> None:
         """Validate the connection to the Jellyfin server."""

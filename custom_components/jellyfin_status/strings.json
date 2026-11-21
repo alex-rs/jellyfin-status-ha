@@ -9,6 +9,14 @@
           "api_key": "API Key",
           "poll_interval": "Poll Interval (seconds)"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Jellyfin Status",
+        "description": "Change the Jellyfin server URL. Leave the API key empty to keep the current one.",
+        "data": {
+          "url": "Server URL",
+          "api_key": "API Key (optional)"
+        }
       }
     },
     "error": {
